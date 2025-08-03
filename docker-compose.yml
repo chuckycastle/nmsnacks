@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: nmsnacks-postgres
+    environment:
+      POSTGRES_DB: nmsnacks
+      POSTGRES_USER: nmsnacks_user
+      POSTGRES_PASSWORD: dev_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - nmsnacks-network
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: nmsnacks-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - nmsnacks-network
+
+  # Backend API Server
+  api:
+    build: 
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: nmsnacks-api
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://nmsnacks_user:dev_password@postgres:5432/nmsnacks
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+      - ./uploads:/app/uploads
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - nmsnacks-network
+    command: npm run dev
+
+  # Frontend React App
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: nmsnacks-client
+    environment:
+      VITE_API_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    depends_on:
+      - api
+    networks:
+      - nmsnacks-network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  nmsnacks-network:
+    driver: bridge

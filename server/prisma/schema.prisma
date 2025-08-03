@@ -1,0 +1,435 @@
+// NMSnacks POS System - Complete Database Schema
+// Updated based on legacy MySQL analysis
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  SELLER
+  CUSTOMER
+}
+
+enum PaymentStatus {
+  PAID
+  NOT_PAID
+  REFUNDED
+}
+
+enum RaffleStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum TransactionType {
+  IN
+  OUT
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum JournalEntryType {
+  DEBIT
+  CREDIT
+}
+
+model User {
+  id          String    @id @default(cuid())
+  username    String    @unique
+  email       String?   @unique
+  password    String
+  name        String
+  role        UserRole  @default(SELLER)
+  isActive    Boolean   @default(true)
+  lastLogin   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Legacy MySQL compatibility
+  legacyUserId Int? @unique @map("legacy_user_id")
+
+  // Relations
+  sales           Sale[]
+  replenishments  Replenishment[]
+  transactions    Transaction[]
+  rafflesCreated  Raffle[]        @relation("RaffleCreator")
+  raffleTicketsSold RaffleTicket[] @relation("TicketSeller")
+
+  @@map("users")
+}
+
+model Customer {
+  id            String   @id @default(cuid())
+  name          String
+  email         String?  @unique
+  phone         String?
+  contactInfo   String?  // For raffle tickets
+  creditBalance Decimal  @default(0) @db.Decimal(10, 2)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Legacy MySQL compatibility
+  legacyCustomerId Int? @unique @map("legacy_customer_id")
+
+  // Relations
+  sales         Sale[]
+  raffleTickets RaffleTicket[]
+
+  @@map("customers")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  salePrice   Decimal  @map("sale_price") @db.Decimal(10, 2)
+  cost        Decimal  @db.Decimal(10, 2)
+  stock       Int      @default(0)
+  minStock    Int      @default(0) @map("min_stock")
+  imageLink   String?  @map("image_link")
+  category    String   // String for compatibility with legacy data
+  categoryRef Category? @relation(fields: [categoryId], references: [id])
+  categoryId  String?
+  sku         String?  @unique
+  barcode     String?  @unique
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Legacy MySQL compatibility
+  legacyProductId Int? @unique @map("legacy_product_id")
+
+  // Relations
+  sales           Sale[]
+  replenishments  Replenishment[]
+  transactions    Transaction[]
+  raffleItems     RaffleItem[]
+  bundleItems     BundleItem[]
+  boxTemplateItems BoxTemplateItem[]
+
+  @@map("products")
+}
+
+model Sale {
+  id              String        @id @default(cuid())
+  buyer           String?       // Legacy: can be empty
+  quantity        Int
+  unitSalePrice   Decimal       @map("unit_sale_price") @db.Decimal(10, 2)
+  totalAmount     Decimal       @map("total_amount") @db.Decimal(10, 2)
+  paymentStatus   PaymentStatus @default(PAID) @map("payment_status")
+  saleDate        DateTime      @map("sale_date")
+  paymentReceivedBy String?     @map("payment_received_by") // Legacy username
+  paymentMethod   String?       @map("payment_method")
+  notes           String?
+  posBatch        String?       @map("pos_batch") // Groups transaction items
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Legacy MySQL compatibility
+  legacySaleId Int? @unique @map("legacy_sale_id")
+
+  // Foreign Keys
+  productId  String
+  product    Product @relation(fields: [productId], references: [id])
+  sellerId   String? // Optional for legacy data
+  seller     User?   @relation(fields: [sellerId], references: [id])
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
+  @@map("sales")
+  @@index([saleDate])
+  @@index([posBatch])
+  @@index([productId])
+}
+
+model Bundle {
+  id          String   @id @default(cuid())
+  name        String
+  bundlePrice Decimal  @map("bundle_price") @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Legacy MySQL compatibility
+  legacyBundleId Int? @unique @map("legacy_bundle_id")
+
+  // Relations
+  items BundleItem[]
+
+  @@map("bundles")
+}
+
+model BundleItem {
+  id        String   @id @default(cuid())
+  quantity  Int
+  createdAt DateTime @default(now())
+
+  // Foreign Keys
+  bundleId  String
+  bundle    Bundle  @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@unique([bundleId, productId])
+  @@map("bundle_items")
+}
+
+model BoxTemplate {
+  id                 String   @id @default(cuid())
+  name               String
+  description        String?
+  defaultCostPerBox  Decimal  @map("default_cost_per_box") @db.Decimal(10, 2)
+  image              String?
+  category           String
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Legacy MySQL compatibility
+  legacyTemplateId Int? @unique @map("legacy_template_id")
+
+  // Relations
+  contents      BoxTemplateItem[]
+  replenishments Replenishment[]
+  transactions   Transaction[]
+
+  @@map("box_templates")
+}
+
+model BoxTemplateItem {
+  id        String   @id @default(cuid())
+  quantity  Int
+  createdAt DateTime @default(now())
+
+  // Foreign Keys
+  templateId String
+  template   BoxTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product     @relation(fields: [productId], references: [id])
+
+  @@unique([templateId, productId])
+  @@map("box_template_items")
+}
+
+model Replenishment {
+  id                 String   @id @default(cuid())
+  quantity           Int
+  totalCost          Decimal  @map("total_cost") @db.Decimal(10, 2)
+  adminUser          String   @map("admin_user") // Legacy username reference
+  replenishmentDate  DateTime @map("replenishment_date")
+  notes              String?
+  batchId            String?  @map("batch_id")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Legacy MySQL compatibility
+  legacyReplenishmentId Int? @unique @map("legacy_replenishment_id")
+
+  // Foreign Keys
+  productId  String
+  product    Product @relation(fields: [productId], references: [id])
+  templateId String?
+  template   BoxTemplate? @relation(fields: [templateId], references: [id])
+  userId     String? // Modern user reference
+  user       User?   @relation(fields: [userId], references: [id])
+
+  @@map("replenishments")
+  @@index([batchId])
+  @@index([replenishmentDate])
+}
+
+model Transaction {
+  id          String          @id @default(cuid())
+  type        TransactionType
+  amount      Decimal         @db.Decimal(10, 2)
+  description String
+  quantity    Int?
+  adminUser   String          @map("admin_user") // Legacy username
+  batchId     String?         @map("batch_id")
+  createdAt   DateTime        @default(now())
+
+  // Legacy MySQL compatibility
+  legacyTransactionId Int? @unique @map("legacy_transaction_id")
+
+  // Foreign Keys
+  productId  String?
+  product    Product? @relation(fields: [productId], references: [id])
+  templateId String?
+  template   BoxTemplate? @relation(fields: [templateId], references: [id])
+  userId     String? // Modern user reference
+  user       User?   @relation(fields: [userId], references: [id])
+
+  @@map("transactions")
+}
+
+model Raffle {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  startDate   DateTime     @map("start_date")
+  endDate     DateTime     @map("end_date")
+  ticketPrice Decimal      @map("ticket_price") @db.Decimal(10, 2)
+  maxTickets  Int?         @map("max_tickets")
+  status      RaffleStatus @default(ACTIVE)
+  winnerId    String?      @map("winner_id")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Legacy MySQL compatibility
+  legacyRaffleId Int? @unique @map("legacy_raffle_id")
+
+  // Foreign Keys
+  createdById String @map("created_by_id")
+  createdBy   User   @relation("RaffleCreator", fields: [createdById], references: [id])
+
+  // Relations
+  items   RaffleItem[]
+  tickets RaffleTicket[]
+
+  @@map("raffles")
+}
+
+model RaffleItem {
+  id        String   @id @default(cuid())
+  category  String?  // Can be NULL if product_id is specified
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  // Legacy MySQL compatibility
+  legacyRaffleItemId Int? @unique @map("legacy_raffle_item_id")
+
+  // Foreign Keys
+  raffleId  String
+  raffle    Raffle  @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+
+  @@map("raffle_items")
+  @@index([raffleId])
+}
+
+model RaffleTicket {
+  id             String        @id @default(cuid())
+  buyerName      String        @map("buyer_name")
+  contactInfo    String?       @map("contact_info")
+  ticketNumber   String        @map("ticket_number")
+  purchaseDate   DateTime      @default(now()) @map("purchase_date")
+  price          Decimal       @db.Decimal(10, 2)
+  paymentMethod  String        @map("payment_method")
+  paymentStatus  PaymentStatus @default(PAID) @map("payment_status")
+  seller         String        // Legacy username reference
+  notes          String?
+  createdAt      DateTime      @default(now())
+
+  // Legacy MySQL compatibility
+  legacyTicketId Int? @unique @map("legacy_ticket_id")
+
+  // Foreign Keys
+  raffleId   String
+  raffle     Raffle    @relation(fields: [raffleId], references: [id], onDelete: Cascade)
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  sellerId   String?   // Modern user reference
+  sellerUser User?     @relation("TicketSeller", fields: [sellerId], references: [id])
+
+  @@unique([raffleId, ticketNumber])
+  @@map("raffle_tickets")
+}
+
+// Accounting System Tables
+
+model Account {
+  id          String      @id @default(cuid())
+  accountName String      @map("account_name")
+  accountType AccountType @map("account_type")
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Legacy MySQL compatibility
+  legacyAccountId Int? @unique @map("legacy_account_id")
+
+  // Relations
+  journalEntries JournalEntry[]
+
+  @@map("accounts")
+}
+
+model JournalEntry {
+  id              String            @id @default(cuid())
+  transactionDate DateTime          @map("transaction_date")
+  type            JournalEntryType
+  amount          Decimal           @db.Decimal(10, 2)
+  description     String?
+  referenceId     String?           @map("reference_id")
+  createdAt       DateTime          @default(now())
+
+  // Legacy MySQL compatibility
+  legacyEntryId Int? @unique @map("legacy_entry_id")
+
+  // Foreign Keys
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id])
+
+  @@map("journal_entries")
+}
+
+// System Configuration
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  category  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Legacy MySQL compatibility
+  legacySettingId Int? @unique @map("legacy_setting_id")
+
+  @@map("settings")
+}
+
+// Audit Trail
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  tableName String   @map("table_name")
+  recordId  String   @map("record_id")
+  action    String   // CREATE, UPDATE, DELETE
+  oldValues Json?    @map("old_values")
+  newValues Json?    @map("new_values")
+  userId    String?  @map("user_id")
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+  @@index([tableName, recordId])
+  @@index([userId])
+}
