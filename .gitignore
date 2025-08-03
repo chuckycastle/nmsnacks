@@ -1,0 +1,41 @@
+# PHP
+*.log
+*.cache
+.env
+.env.local
+.env.production
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Database
+*.sql.backup
+*.dump
+
+# Sensitive configuration (create .env for local development)
+inc/config.local.php
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Upload directories (if any)
+uploads/
+files/
+
+# Composer (if used in future)
+vendor/
+composer.lock
+
+# Node modules (if any frontend build tools added)
+node_modules/
+npm-debug.log
+yarn-error.log
