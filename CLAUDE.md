@@ -58,12 +58,20 @@ Both instances can be managed via AWS CLI with appropriate permissions:
 # List all Lightsail instances
 aws lightsail get-instances
 
-# Production instance operations
-aws lightsail get-instance --instance-name nmsnacks-prod
+# Production instance operations (Note: Instance name is "N_M_Snacks")
+aws lightsail get-instance --instance-name "N_M_Snacks"
 
 # Development instance operations  
 aws lightsail get-instance --instance-name nmsnacks-dev
+
+# List instances with tags for easier identification
+aws lightsail get-instances --query 'instances[?tags[?key==`Project` && value==`NMSnacks`]].{Name:name,Environment:tags[?key==`Environment`].value|[0],State:state.name,PublicIp:publicIpAddress}' --output table
 ```
+
+**Instance Names:**
+- **Production**: `N_M_Snacks` (Cannot be renamed in Lightsail)
+- **Development**: `nmsnacks-dev`
+- **Tags**: Both instances tagged with Project=NMSnacks for identification
 
 ## Current Architecture (Modern Stack)
 
@@ -524,13 +532,19 @@ pkill -f "node.*3001" && pkill -f "node.*3000"
 aws lightsail get-instances
 
 # Get specific instance details
-aws lightsail get-instance --instance-name nmsnacks-prod
-aws lightsail get-instance --instance-name nmsnacks-dev
+aws lightsail get-instance --instance-name "N_M_Snacks"      # Production
+aws lightsail get-instance --instance-name nmsnacks-dev      # Development
 
 # Instance operations (start/stop/reboot)
+aws lightsail start-instance --instance-name "N_M_Snacks"
 aws lightsail start-instance --instance-name nmsnacks-dev
+aws lightsail stop-instance --instance-name "N_M_Snacks"
 aws lightsail stop-instance --instance-name nmsnacks-dev
+aws lightsail reboot-instance --instance-name "N_M_Snacks"
 aws lightsail reboot-instance --instance-name nmsnacks-dev
+
+# List NMSnacks instances by project tag
+aws lightsail get-instances --query 'instances[?tags[?key==`Project` && value==`NMSnacks`]]' --output table
 ```
 
 ### System Maintenance
