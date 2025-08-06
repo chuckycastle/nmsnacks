@@ -6,6 +6,65 @@ This file provides guidance to Claude Code when working with the NMSnacks point-
 
 NMSnacks is a modern point-of-sale and inventory management system for a snack business, built with React + TypeScript frontend and Node.js + Express + Prisma backend. The system was migrated from legacy PHP to provide better mobile experience and modern features.
 
+## Repository Structure (Updated August 2025)
+
+The repository is organized into three distinct branches with specific purposes:
+
+### Branch Architecture
+
+**🏛️ `legacy` Branch** (Archive)
+- **Purpose**: Permanent historical archive of original PHP codebase
+- **Status**: Frozen - never changes
+- **Contents**: Original PHP/MySQL LAMP stack application
+- **Usage**: Reference only for historical context
+
+**🏠 `main` Branch** (Production)
+- **Purpose**: Current production deployment at nmsnacks.com
+- **Status**: Contains legacy PHP code for production stability
+- **Contents**: PHP/MySQL LAMP stack (cleaned of modern code)
+- **Deployment**: Direct file serving via Apache/PHP-FPM
+- **URL**: https://nmsnacks.com
+
+**🚀 `dev` Branch** (Development)
+- **Purpose**: Modern React/TypeScript + Node.js development
+- **Status**: Active development branch with modern architecture
+- **Contents**: React frontend + Node.js/Express/Prisma backend
+- **Deployment**: Development environment at dev.nmsnacks.com
+- **URL**: https://dev.nmsnacks.com (when Node.js servers are running)
+
+## Live Environment Setup (AWS Lightsail)
+
+**Separate Lightsail Instances Architecture:**
+
+### Production Instance (nmsnacks.com)
+- **FQDN**: nmsnacks.com
+- **SSH Access**: `ssh -i ~/.ssh/LightsailDefaultKey-us-east-1.pem bitnami@nmsnacks.com`
+- **Database**: MySQL running on same server
+- **Web Server**: Apache with PHP-FPM
+- **Application Path**: `/opt/bitnami/apache/htdocs/` (main branch - legacy PHP)
+- **Purpose**: Live production system serving legacy PHP application
+
+### Development Instance (dev.nmsnacks.com)
+- **FQDN**: dev.nmsnacks.com
+- **SSH Access**: `ssh -i ~/.ssh/LightsailDefaultKey-us-east-1.pem bitnami@dev.nmsnacks.com`
+- **Database**: PostgreSQL + Redis (Docker containers or native)
+- **Web Server**: Apache with reverse proxy OR direct Node.js serving
+- **Application Path**: `/opt/bitnami/apache/htdocs/` OR `/home/bitnami/nmsnacks/` (dev branch - modern stack)
+- **Purpose**: Development and staging environment for React/Node.js application
+
+### AWS CLI Access
+Both instances can be managed via AWS CLI with appropriate permissions:
+```bash
+# List all Lightsail instances
+aws lightsail get-instances
+
+# Production instance operations
+aws lightsail get-instance --instance-name nmsnacks-prod
+
+# Development instance operations  
+aws lightsail get-instance --instance-name nmsnacks-dev
+```
+
 ## Current Architecture (Modern Stack)
 
 ### Frontend (React + TypeScript)
@@ -15,581 +74,472 @@ NMSnacks is a modern point-of-sale and inventory management system for a snack b
 - **UI Components**: Headless UI for accessibility
 - **Icons**: Heroicons
 - **Mobile-First**: Optimized for iPhone usage with responsive design
+- **Development Server**: Vite dev server on port 3000
 
 ### Backend (Node.js + Express)
-- **Runtime**: Node.js with TypeScript
+- **Runtime**: Node.js 18.20.8 with TypeScript
 - **Framework**: Express.js with comprehensive middleware
-- **Database**: Prisma ORM with MySQL
+- **Database**: Prisma ORM with PostgreSQL (modern architecture)
 - **Authentication**: JWT with secure session management
 - **Security**: Helmet, CORS, rate limiting, input validation
+- **Development Server**: Express server on port 3001
 
-## Live Environment Access
+### Database Configuration
+- **Development**: PostgreSQL 15 via Docker containers
+- **Production**: Will use PostgreSQL (separate from legacy MySQL)
+- **Schema**: Modern Prisma schema with comprehensive data model
+- **Legacy Migration**: Separate from production data for clean architecture
 
-**Production Server Details:**
-- **FQDN**: nmsnacks.com
-- **SSH Access**: `ssh -i ~/.ssh/LightsailDefaultKey-us-east-1.pem bitnami@nmsnacks.com`
-- **Database**: MySQL running on same server
-- **Application Path**: `/opt/bitnami/apache/htdocs/`
-- **Database Access**: MySQL as bitnami user
-- **PHP Version**: 7.4+ (Bitnami stack)
+## Deployment Workflows
 
-**Critical**: All data migration operations MUST reference the live AWS Lightsail environment to ensure no data loss during modernization.
-
-**Technology Stack**:
-- **Backend**: PHP 7.4+ with PDO for database operations
-- **Frontend**: Bootstrap 5, jQuery, Chart.js
-- **Database**: MySQL/MariaDB
-- **Architecture**: Traditional LAMP stack with MVC-like structure
-- **Authentication**: Session-based with role-based access control
-
-## System Architecture
-
-### Directory Structure
-```
-├── ajax/                  # AJAX endpoints for dynamic functionality
-│   ├── bundles_ajax.php   # Bundle management operations
-│   ├── charts_ajax.php    # Chart data endpoints
-│   ├── products_ajax.php  # Product CRUD operations
-│   ├── raffles_ajax.php   # Raffle management
-│   ├── sales_ajax.php     # Sales transaction handling
-│   ├── users_ajax.php     # User management operations
-│   └── ...               # Additional AJAX endpoints
-├── css/                   # Stylesheets
-├── img/                   # Product images and logos
-├── inc/                   # Core PHP includes
-│   ├── auth.php          # Authentication logic
-│   ├── config.php        # Database configuration
-│   ├── functions.php     # Utility functions
-│   └── partials/         # Reusable UI components
-│       ├── header.php    # HTML head and navigation
-│       ├── footer.php    # Footer and closing tags
-│       ├── navbar.php    # Navigation bar
-│       └── modals/       # Bootstrap modal dialogs
-├── js/                   # JavaScript modules
-│   ├── main.js          # Core utilities and chart functions
-│   ├── pos.js           # Point of sale functionality
-│   ├── inventory.js     # Inventory management
-│   └── ...              # Page-specific JavaScript
-├── pages/                # Main application pages
-│   ├── dashboard.php    # Main dashboard
-│   ├── pos.php          # Point of sale interface
-│   ├── inventory.php    # Product management
-│   ├── sales.php        # Sales history and management
-│   └── ...              # Additional feature pages
-├── *.sql                # Database schema and updates
-├── index.php            # Front controller
-└── login.php            # Authentication entry point
-```
-
-### Core Architecture Patterns
-
-**Front Controller Pattern**:
-- `index.php` serves as the single entry point for authenticated pages
-- Routes requests based on `?page=` parameter to appropriate page files
-- Handles AJAX vs regular request detection
-
-**Authentication Layer**:
-- `inc/auth.php` validates session and role-based access
-- Three user roles: admin, seller, customer
-- Session regeneration on login for security
-
-**Data Access Pattern**:
-- PDO with prepared statements throughout application
-- Database configuration centralized in `inc/config.php`
-- Consistent error handling with try-catch blocks
-
-## Security Architecture
-
-### Current Security Measures
-
-**✅ Strong Authentication**:
-- Password hashing with `password_hash(PASSWORD_DEFAULT)`
-- Session regeneration on login
-- Role-based access control
-- Session timeout protection
-
-**✅ SQL Injection Prevention**:
-- Consistent use of PDO prepared statements
-- No direct SQL string concatenation found
-- Proper parameter binding throughout
-
-**✅ Output Escaping**:
-- `htmlspecialchars()` used extensively in templates
-- XSS prevention in user-generated content
-- Proper encoding of dynamic values
-
-**✅ Access Control**:
-- Authentication required for all admin pages
-- Role-based restrictions (customer blocked from admin)
-- Session validation on each request
-
-### Known Security Vulnerabilities
-
-**🚨 CRITICAL: File Upload Security (ajax/products_ajax.php:31-50)**
-```php
-// VULNERABLE CODE - DO NOT REPLICATE
-if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] == UPLOAD_ERR_OK) {
-    $extension = pathinfo($originalName, PATHINFO_EXTENSION);
-    // Only checks file extension, not content type or file signature
-}
-```
-**Issues**: No MIME type validation, no file content verification, uploads stored in web-accessible directory
-**Impact**: Potential remote code execution via PHP shell upload
-
-**🚨 HIGH: Configuration Security (inc/config.php:7)**
-```php
-// SECURITY ISSUE - HARDCODED CREDENTIALS
-$pass = 'your_strong_password'; // Replace with your actual password
-```
-**Issues**: Database credentials in source code, committed to version control
-**Impact**: Credential exposure, potential database compromise
-
-**⚠️ MEDIUM: CSRF Protection Missing**
-- All forms lack CSRF token validation
-- State-changing operations vulnerable to cross-site request forgery
-- Particularly concerning for admin operations (user creation, product management)
-
-**⚠️ MEDIUM: Session Management Issues**
-- Multiple `session_start()` calls without proper status checking
-- Potential for session fixation attacks
-- No session timeout configuration
-
-## Development Guidelines
-
-### Security Best Practices
-
-**File Upload Security**:
-```php
-// CORRECT: Secure file upload implementation
-function validateFileUpload($file) {
-    // 1. Check file type by MIME and content
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mimeType = finfo_file($finfo, $file['tmp_name']);
-    
-    if (!in_array($mimeType, $allowedTypes)) {
-        throw new Exception('Invalid file type');
-    }
-    
-    // 2. Validate file signature/magic bytes
-    // 3. Store outside web root or with .htaccess protection
-    // 4. Generate unique filename
-}
-```
-
-**Configuration Security**:
-```php
-// CORRECT: Environment-based configuration
-$host = $_ENV['DB_HOST'] ?? 'localhost';
-$db   = $_ENV['DB_NAME'] ?? 'nmsnacks';
-$user = $_ENV['DB_USER'] ?? 'nmsnacks_user';
-$pass = $_ENV['DB_PASS'] ?? '';
-```
-
-**CSRF Protection**:
-```php
-// CORRECT: CSRF token implementation
-function generateCSRFToken() {
-    if (!isset($_SESSION['csrf_token'])) {
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    }
-    return $_SESSION['csrf_token'];
-}
-
-function validateCSRFToken($token) {
-    return hash_equals($_SESSION['csrf_token'] ?? '', $token);
-}
-```
-
-### Database Patterns
-
-**Consistent PDO Usage**:
-```php
-// CORRECT: Always use prepared statements
-$stmt = $pdo->prepare("SELECT * FROM products WHERE category = ? AND stock > ?");
-$stmt->execute([$category, $minStock]);
-$products = $stmt->fetchAll();
-
-// NEVER: Direct string concatenation
-// $query = "SELECT * FROM products WHERE category = '$category'"; // VULNERABLE
-```
-
-**Transaction Handling for Complex Operations**:
-```php
-// CORRECT: Use transactions for multi-table operations
-try {
-    $pdo->beginTransaction();
-    
-    // Multiple related operations
-    $stmt1 = $pdo->prepare("INSERT INTO sales ...");
-    $stmt1->execute($data1);
-    
-    $stmt2 = $pdo->prepare("UPDATE products SET stock = stock - ? ...");
-    $stmt2->execute($data2);
-    
-    $pdo->commit();
-} catch (Exception $e) {
-    $pdo->rollback();
-    throw $e;
-}
-```
-
-### Code Organization Patterns
-
-**AJAX Endpoint Structure**:
-```php
-// Standard AJAX endpoint pattern
-<?php
-require '../inc/config.php';
-require '../inc/auth.php';
-require '../inc/functions.php';
-
-header('Content-Type: application/json');
-$method = $_SERVER['REQUEST_METHOD'];
-
-switch ($method) {
-    case 'GET':
-        // Read operations
-        break;
-    case 'POST':
-        // Create operations
-        break;
-    case 'PUT':
-        // Update operations
-        break;
-    case 'DELETE':
-        // Delete operations
-        break;
-    default:
-        sendResponse(false, [], 'Method not allowed');
-}
-```
-
-**Error Handling Pattern**:
-```php
-// Use the sendResponse() function consistently
-function sendResponse($success, $data = [], $message = '') {
-    header('Content-Type: application/json');
-    echo json_encode([
-        'success' => $success,
-        'data' => $data,
-        'message' => $message
-    ]);
-    exit;
-}
-```
-
-## Database Schema
-
-### Core Tables
-
-**users**: System users (admin, seller roles)
-- `user_id` (PK), `username`, `password`, `email`, `name`, `role`, `created_at`
-
-**customers**: Customer records for sales tracking
-- `customer_id` (PK), `name`, `credit_balance`, `created_at`
-
-**products**: Inventory items
-- `product_id` (PK), `name`, `sale_price`, `cost`, `stock`, `category`, `image_link`
-
-**sales**: Individual sale transactions
-- `sale_id` (PK), `product_id` (FK), `buyer`, `quantity`, `unit_sale_price`, `payment_status`, `sale_date`, `seller`, `pos_batch`
-
-**raffles**: Raffle management
-- `raffle_id` (PK), `name`, `description`, `start_date`, `end_date`, `ticket_price`, `status`, `created_by`
-
-**Key Relationships**:
-- Sales → Products (many-to-one)
-- Sales → Customers (many-to-one, optional)
-- Raffle Items → Products (many-to-many through raffle_items)
-- Raffle Tickets → Raffles (many-to-one)
-
-### Database Operations
-
-**Common Query Patterns**:
-```sql
--- Inventory management
-SELECT p.*, 
-       COALESCE(SUM(s.quantity), 0) as total_sold,
-       (p.stock - COALESCE(SUM(s.quantity), 0)) as available_stock
-FROM products p
-LEFT JOIN sales s ON p.product_id = s.product_id
-GROUP BY p.product_id;
-
--- Sales analytics
-SELECT DATE(sale_date) as sale_day,
-       SUM(quantity * unit_sale_price) as daily_revenue,
-       COUNT(DISTINCT pos_batch) as transaction_count
-FROM sales 
-WHERE sale_date >= ?
-GROUP BY DATE(sale_date)
-ORDER BY sale_day;
-```
-
-## Frontend Architecture
-
-### JavaScript Organization
-
-**main.js**: Core utilities and shared functions
-- Chart creation and management
-- Alert system for user feedback
-- Common AJAX helpers
-
-**Page-specific modules**:
-- `pos.js`: Point of sale cart management and checkout
-- `inventory.js`: Product management and bulk operations
-- `sales.js`: Sales history and analytics
-- `users.js`: User management interface
-
-### UI Patterns
-
-**Bootstrap Modal Integration**:
-- Modals for all CRUD operations
-- Consistent form validation and submission
-- AJAX-based updates with user feedback
-
-**Chart.js Usage**:
-- Sales analytics dashboard
-- Inventory level monitoring
-- Revenue tracking over time
-
-## Testing Guidelines
-
-### Manual Testing Checklist
-
-**Authentication & Authorization**:
-- [ ] Login with valid/invalid credentials
-- [ ] Session timeout behavior
-- [ ] Role-based access restrictions
-- [ ] Logout functionality
-
-**Point of Sale Operations**:
-- [ ] Product selection and cart management
-- [ ] Stock validation during checkout
-- [ ] Payment processing and receipt generation
-- [ ] Customer creation and credit tracking
-
-**Inventory Management**:
-- [ ] Product CRUD operations
-- [ ] Image upload functionality
-- [ ] Stock level updates
-- [ ] Category management
-
-**Security Testing**:
-- [ ] File upload with various file types
-- [ ] SQL injection attempts in forms
-- [ ] XSS payload injection
-- [ ] CSRF attack simulation
-
-### Performance Testing
-
-**Database Performance**:
+### Production Deployment (Legacy PHP)
 ```bash
-# Test with large datasets
-# Monitor query execution time for:
-# - Product listing with images
-# - Sales history queries
-# - Chart data aggregation
+# SSH to production instance
+ssh -i ~/.ssh/LightsailDefaultKey-us-east-1.pem bitnami@nmsnacks.com
+
+# Navigate to production directory
+cd /opt/bitnami/apache/htdocs
+
+# Pull latest changes from main branch
+git pull origin main
+
+# No additional steps needed - Apache serves PHP directly
 ```
 
-**Load Testing Scenarios**:
-- Multiple concurrent POS transactions
-- Bulk inventory updates
-- Chart data generation with large datasets
-
-## Deployment & Operations
-
-### Environment Setup
-
-**Required PHP Extensions**:
-- PDO MySQL
-- GD or ImageMagick (for image processing)
-- Session support
-- JSON support
-
-**Database Setup**:
-```sql
--- Create database and user
-CREATE DATABASE nmsnacks CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'nmsnacks_user'@'localhost' IDENTIFIED BY 'secure_password';
-GRANT ALL PRIVILEGES ON nmsnacks.* TO 'nmsnacks_user'@'localhost';
-
--- Import schema files in order:
--- 1. Base tables
--- 2. raffle_tables.sql
--- 3. update.sql (if applicable)
-```
-
-**Web Server Configuration**:
-```apache
-# Apache .htaccess recommendations
-RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)$ index.php [QSA,L]
-
-# Security headers
-Header always set X-Content-Type-Options nosniff
-Header always set X-Frame-Options DENY
-Header always set X-XSS-Protection "1; mode=block"
-```
-
-### Security Hardening Checklist
-
-**File System Security**:
-- [ ] Move uploads outside web root
-- [ ] Set proper file permissions (644 for files, 755 for directories)
-- [ ] Create .htaccess to block direct access to sensitive files
-- [ ] Remove or secure SQL files from web-accessible location
-
-**Configuration Security**:
-- [ ] Move database credentials to environment variables
-- [ ] Enable HTTPS for all traffic
-- [ ] Configure secure session settings
-- [ ] Set up proper error logging (not displayed to users)
-
-**Application Security**:
-- [ ] Implement CSRF protection
-- [ ] Add input validation framework
-- [ ] Set up file upload security
-- [ ] Configure session timeout
-
-## Performance Optimization
-
-### Database Optimization
-
-**Recommended Indexes**:
-```sql
--- Sales performance
-CREATE INDEX idx_sales_date ON sales(sale_date);
-CREATE INDEX idx_sales_batch ON sales(pos_batch);
-CREATE INDEX idx_sales_product ON sales(product_id);
-
--- Product lookups
-CREATE INDEX idx_products_category ON products(category);
-CREATE INDEX idx_products_stock ON products(stock);
-
--- User operations
-CREATE INDEX idx_customers_name ON customers(name);
-```
-
-**Query Optimization**:
-- Use LIMIT clauses for large result sets
-- Implement pagination for product listings
-- Cache frequently accessed data (categories, user sessions)
-
-### Frontend Optimization
-
-**Asset Management**:
-- Minify CSS and JavaScript files
-- Optimize product images (WebP format, appropriate sizing)
-- Use CDN for external libraries
-- Implement browser caching headers
-
-**JavaScript Performance**:
-- Debounce search inputs
-- Lazy load product images
-- Use event delegation for dynamic content
-- Minimize DOM manipulations
-
-## Common Development Tasks
-
-### Adding New Features
-
-**New Page Creation**:
-1. Create page file in `pages/` directory
-2. Add route case in `index.php`
-3. Create corresponding JavaScript file if needed
-4. Add navigation link in `inc/partials/navbar.php`
-5. Create any required AJAX endpoints in `ajax/`
-
-**Database Schema Changes**:
-1. Create migration SQL file
-2. Test on development environment
-3. Update `CLAUDE.md` with schema changes
-4. Plan rollback strategy for production
-
-### Debugging Guidelines
-
-**Common Error Patterns**:
-- Check session status before operations
-- Verify database connection in `config.php`
-- Validate file permissions for uploads
-- Check for JavaScript console errors
-
-**Logging Strategy**:
-```php
-// Add error logging (implement centrally)
-error_log("NMSnacks Error: " . $message, 3, "/path/to/app.log");
-```
-
-## Security Incident Response
-
-### File Upload Compromise
-1. Immediately disable file upload functionality
-2. Scan `/img` directory for suspicious files
-3. Check web server logs for unusual requests
-4. Implement proper file validation before re-enabling
-
-### Database Breach Indicators
-1. Monitor for unusual query patterns
-2. Check for unauthorized user accounts
-3. Audit sales data for anomalies
-4. Reset all user passwords if compromise confirmed
-
-## Future Development Roadmap
-
-### Short-term Improvements (1-3 months)
-- Fix critical security vulnerabilities
-- Implement CSRF protection
-- Add comprehensive input validation
-- Improve error handling and logging
-
-### Medium-term Enhancements (3-6 months)
-- Code refactoring and modernization
-- API development for mobile integration
-- Advanced analytics and reporting
-- Automated testing framework
-
-### Long-term Vision (6+ months)
-- Framework migration (Laravel/Symfony)
-- Real-time notifications system
-- Multi-location support
-- Integration with payment processors
-
-## Development Environment Setup
-
-### Local Development
+### Development Deployment (Modern React/Node.js Stack)
 ```bash
-# Using XAMPP/MAMP or Docker
-docker run -d \
-  --name nmsnacks-mysql \
-  -e MYSQL_ROOT_PASSWORD=root \
-  -e MYSQL_DATABASE=nmsnacks \
-  -e MYSQL_USER=nmsnacks_user \
-  -e MYSQL_PASSWORD=dev_password \
-  -p 3306:3306 \
-  mysql:8.0
+# SSH to development instance
+ssh -i ~/.ssh/LightsailDefaultKey-us-east-1.pem bitnami@dev.nmsnacks.com
 
-# Start PHP development server
-php -S localhost:8000 -t /path/to/nmsnacks
+# Navigate to application directory (adjust path as needed)
+cd /opt/bitnami/apache/htdocs
+# OR
+cd /home/bitnami/nmsnacks
+
+# Pull latest changes from dev branch
+git pull origin dev
+
+# Install/update dependencies
+cd server && npm install
+cd ../client && npm install
+
+# Database operations (if needed)
+cd ../server
+npx prisma generate
+npx prisma migrate deploy
+
+# Start development servers
+npm run dev
+# OR use process manager
+pm2 start ecosystem.config.js
 ```
 
-### Git Workflow
-- Use feature branches for all changes
-- Test security fixes thoroughly
-- Never commit configuration files with real credentials
-- Use descriptive commit messages referencing security fixes
+**Development Instance Services:**
+- **Backend API**: Express/Prisma server on port 3001
+- **Frontend**: Vite dev server on port 3000 OR built static files
+- **Database**: PostgreSQL + Redis (Docker or native installation)
+- **Web Server**: Apache reverse proxy OR direct Node.js serving
+
+### Git Repository Setup
+Each instance has its own git repository configuration:
+
+**Production Instance (nmsnacks.com):**
+```bash
+cd /opt/bitnami/apache/htdocs
+git branch -v  # Shows: main branch tracking origin/main
+git remote -v  # Shows repository URL
+```
+
+**Development Instance (dev.nmsnacks.com):**
+```bash
+cd /opt/bitnami/apache/htdocs  # or /home/bitnami/nmsnacks
+git branch -v  # Shows: dev branch tracking origin/dev
+git remote -v  # Shows repository URL
+```
+
+## Development Environment Configuration
+
+### Node.js Setup
+- **Version**: Node.js 18.20.8 installed via NodeSource repository
+- **Package Manager**: npm 10.8.2
+- **Dependencies**: All client and server dependencies installed
+
+### Environment Configuration
+Development environment uses `.env` file with MySQL connection:
+```env
+DATABASE_URL="mysql://root:@localhost:3306/nmsnacks"
+NODE_ENV="development"
+PORT=3001
+CORS_ORIGIN="http://dev.nmsnacks.com"
+```
+
+### Startup Script (`start-dev.sh`)
+```bash
+#!/bin/bash
+# Starts both backend (port 3001) and frontend (port 3000) servers
+# Runs in background with PID tracking for cleanup
+```
+
+## System Status (August 2025)
+
+### Working Components
+- ✅ **Production Site**: nmsnacks.com serves legacy PHP application
+- ✅ **Domain Routing**: *.nmsnacks.com defaults to production
+- ✅ **Git Integration**: Both environments track appropriate branches
+- ✅ **Apache Configuration**: Proper virtual host routing
+- ✅ **Node.js Environment**: Installed and configured for development
+
+### Development Environment Status (Updated August 2025)
+- ✅ **Infrastructure**: Node.js, PostgreSQL, Redis via Docker
+- ✅ **Dependencies**: All npm packages installed and working
+- ✅ **Database**: PostgreSQL with Prisma migrations deployed
+- ✅ **Authentication**: JWT-based auth system fully functional
+- ✅ **Sample Data**: Database seeded with test users and products
+- ✅ **Servers**: Both frontend (3000) and backend (3001) running
+- ✅ **Development Ready**: Complete local environment functional
+
+### Completed Setup Items
+1. ✅ **Database Architecture**: Modern PostgreSQL with Prisma ORM
+2. ✅ **User Authentication**: Admin/Seller accounts with proper login
+3. ✅ **Sample Data**: Comprehensive seed script with realistic data
+4. ✅ **Environment Configuration**: Proper .env setup with all required variables
+5. ✅ **Development Workflow**: Streamlined setup process documented
+
+## Architecture Migration Strategy
+
+### Current State (August 2025)
+- **Production**: Legacy PHP (stable, user-facing at nmsnacks.com)
+- **Development**: Modern React/Node.js stack (fully functional locally)
+- **Data Architecture**: Clean separation - PostgreSQL for modern, MySQL for legacy
+- **Authentication**: Complete modern JWT-based system with test users
+
+### Development Workflow
+1. **Local Development**: Use fully functional local environment with Docker
+2. **Feature Development**: Work on `dev` branch with modern stack
+3. **Testing**: Comprehensive local testing with seeded data
+4. **Future Deployment**: Modern stack will get dedicated cloud infrastructure
+5. **Legacy Preservation**: Original code preserved in `legacy` branch
+
+### Migration Phases
+- **Phase 1** ✅: Infrastructure setup, branch organization
+- **Phase 2** ✅: Backend API development, database integration, authentication
+- **Phase 3** ✅: Local development environment, data seeding, testing setup
+- **Phase 4** 🔜: Cloud deployment preparation, production environment setup
+- **Phase 5** 🔜: Production cutover, legacy retirement
+
+## Security Considerations
+
+### Current Security Status
+**Legacy PHP Application:**
+- ✅ Strong authentication with password hashing
+- ✅ SQL injection prevention via PDO prepared statements
+- ✅ Output escaping with htmlspecialchars()
+- ⚠️ File upload security vulnerabilities remain
+- ⚠️ CSRF protection missing
+- ⚠️ Hardcoded database credentials in config.php
+
+**Modern Node.js Application:**
+- ✅ JWT-based authentication with refresh tokens
+- ✅ Input validation and sanitization via Zod
+- ✅ CORS and security headers via Helmet
+- ✅ Environment-based configuration with .env
+- ✅ Secure password hashing with bcryptjs
+- ✅ Database migrations deployed and functional
+- ✅ User authentication system fully operational
+
+## Performance & Monitoring
+
+### Current Performance
+- **Production**: Supports ~50 concurrent users, ~1000 products
+- **Infrastructure**: Bitnami LAMP stack on AWS Lightsail
+- **Database**: MySQL with appropriate indexes for legacy queries
+- **Monitoring**: Apache access/error logs
+
+### Development Performance
+- **Frontend**: Vite dev server with hot reload
+- **Backend**: Express with development middleware
+- **Database**: Shared MySQL instance (development data isolation needed)
+
+## Team Development Guidelines
+
+### Branch Management
+```bash
+# Working on new features
+git checkout dev
+git pull origin dev
+# Make changes
+git commit -m "feature: description"
+git push origin dev
+
+# Deploying to production (when ready)
+git checkout main
+git merge dev  # or create PR
+git push origin main
+```
+
+## Local Development Environment Setup
+
+### Prerequisites
+- Node.js 18+ installed
+- Docker installed and running
+- Git configured
+
+### Complete Setup Process (Tested August 2025)
+
+**1. Repository Setup**
+```bash
+# Clone and checkout dev branch
+git clone <repository-url>
+cd nmsnacks
+git checkout dev
+```
+
+**2. Database Setup (PostgreSQL via Docker)**
+```bash
+# Start PostgreSQL and Redis containers
+docker-compose -f docker-compose.dev.yml up -d
+
+# Verify containers are running
+docker ps | grep nmsnacks
+```
+
+**3. Backend Setup**
+```bash
+cd server
+
+# Install dependencies
+npm install
+
+# Create environment file
+cat > .env << EOF
+DATABASE_URL="postgresql://nmsnacks:nmsnacks@localhost:5432/nmsnacks_dev"
+NODE_ENV="development"
+PORT=3001
+JWT_SECRET="dev-jwt-secret-change-in-production"
+JWT_REFRESH_SECRET="dev-jwt-refresh-secret-change-in-production"
+CORS_ORIGIN="http://localhost:3000"
+REDIS_URL="redis://localhost:6379"
+EOF
+
+# Generate Prisma client and run migrations
+npx prisma generate
+npx prisma migrate deploy
+
+# Seed database with test data
+npx tsx src/scripts/seed.ts
+
+# Start backend server (in background)
+npm run dev > ../server.log 2>&1 &
+```
+
+**4. Frontend Setup**
+```bash
+cd ../client
+
+# Install dependencies
+npm install
+
+# Start frontend server (in background)
+npm run dev > ../client.log 2>&1 &
+```
+
+**5. Verification**
+```bash
+# Check backend health
+curl http://localhost:3001/health
+
+# Check frontend
+curl -I http://localhost:3000
+
+# Check logs
+tail -f server.log client.log
+```
+
+### Test Credentials (Created by Seeding)
+- **Admin**: username=`admin`, password=`Admin123!`
+- **Seller**: username=`seller1`, password=`Seller123!`
+
+### Development URLs
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:3001
+- **Health Check**: http://localhost:3001/health
+
+### Sample Data Created
+- 2 Users (admin + seller with proper roles)
+- 10 Product categories
+- 10 Sample products (snacks, beverages, candy, etc.)
+- 5 Sample customers with credit balances
+- 7 System settings
+
+### Environment Management
+```bash
+# Start database services
+docker-compose -f docker-compose.dev.yml up -d
+
+# Stop database services
+docker-compose -f docker-compose.dev.yml down
+
+# Stop all development servers
+pkill -f "node.*3001" && pkill -f "node.*3000"
+
+# Clean restart (reset database)
+docker-compose -f docker-compose.dev.yml down -v
+docker-compose -f docker-compose.dev.yml up -d
+cd server && npx prisma migrate deploy && npx tsx src/scripts/seed.ts
+```
+
+### Remote Team Development
+
+**Development Instance Access:**
+1. SSH to development instance: `ssh -i ~/.ssh/LightsailDefaultKey-us-east-1.pem bitnami@dev.nmsnacks.com`
+2. Navigate to project directory: `cd /opt/bitnami/apache/htdocs` OR `cd /home/bitnami/nmsnacks`
+3. Pull latest changes: `git pull origin dev`
+4. Update dependencies: `cd server && npm install && cd ../client && npm install`
+5. Start services: `npm run dev` OR `pm2 start ecosystem.config.js`
+6. Access via: https://dev.nmsnacks.com
+
+**Production Instance Access (for maintenance only):**
+1. SSH to production instance: `ssh -i ~/.ssh/LightsailDefaultKey-us-east-1.pem bitnami@nmsnacks.com`
+2. Navigate to directory: `cd /opt/bitnami/apache/htdocs`
+3. Pull changes: `git pull origin main`
+4. Access via: https://nmsnacks.com
+
+## Emergency Procedures
+
+### Production Instance Service Recovery (nmsnacks.com)
+```bash
+# SSH to production instance
+ssh -i ~/.ssh/LightsailDefaultKey-us-east-1.pem bitnami@nmsnacks.com
+
+# Restart Apache if needed
+sudo /opt/bitnami/ctlscript.sh restart apache
+
+# Restart MySQL if needed
+sudo /opt/bitnami/ctlscript.sh restart mariadb
+
+# Check service status
+sudo /opt/bitnami/ctlscript.sh status
+```
+
+### Development Instance Service Recovery (dev.nmsnacks.com)
+```bash
+# SSH to development instance
+ssh -i ~/.ssh/LightsailDefaultKey-us-east-1.pem bitnami@dev.nmsnacks.com
+
+# Restart Node.js services
+pm2 restart all
+# OR if using direct npm
+pkill -f "node.*3001" && pkill -f "node.*3000"
+cd /path/to/nmsnacks && npm run dev
+
+# Restart database services (if using Docker)
+docker-compose restart postgres redis
+
+# Check service status
+pm2 status
+docker ps
+```
+
+### Rollback Procedures
+- **Production Issues**: Reset main branch on production instance
+- **Development Issues**: Reset dev branch on development instance  
+- **Database Issues**: Each instance has independent database systems
+
+### Log Locations
+
+**Production Instance (nmsnacks.com):**
+- **Apache Access**: `/opt/bitnami/apache/logs/access.log`
+- **Apache Errors**: `/opt/bitnami/apache/logs/error.log`
+- **MySQL**: `/opt/bitnami/mysql/logs/mysqld.log`
+
+**Development Instance (dev.nmsnacks.com):**
+- **Node.js Logs**: PM2 logs or application logs in project directory
+- **Database Logs**: Docker container logs or PostgreSQL system logs
+- **Apache Logs**: `/opt/bitnami/apache/logs/` (if using reverse proxy)
+- **Application Logs**: Check project directory for `server.log`, `client.log`
+
+## Contact Information & Resources
+
+### Development Access
+- **Production Admin**: Via legacy PHP interface at nmsnacks.com/login.php
+- **Development Environment**: https://dev.nmsnacks.com (when servers running)
+- **Database Access**: MySQL as bitnami user on localhost
+- **File System**: Full SSH access as bitnami user
+
+### Documentation References
+- **Legacy API**: PHP files in ajax/ directory
+- **Modern API**: Express routes in server/src/routes/
+- **Database Schema**: Prisma schema in server/prisma/schema.prisma
+- **Frontend Components**: React components in client/src/
 
 ---
 
-**Last Updated**: [Current Date]  
-**Security Review**: Required before any production deployment  
-**Performance Baseline**: Supports ~50 concurrent users, ~1000 products  
-**Backup Strategy**: Daily database backups, weekly full system backup  
+**Last Updated**: August 3, 2025  
+**Current Status**: Development environment configured, production stable  
+**Next Priority**: Complete modern backend integration and frontend debugging  
+**Backup Strategy**: Git-based with legacy code preserved in separate branch
 
-## Emergency Contacts & Resources
-- **Security Issues**: Address immediately, document in this file
-- **Performance Issues**: Monitor database query times, implement indexing
-- **Data Backup**: Automated daily backups recommended
-- **SSL Certificate**: Renewal every 90 days (Let's Encrypt recommended)
+## Quick Reference Commands
+
+### Production Operations (nmsnacks.com)
+```bash
+# SSH to production instance
+ssh -i ~/.ssh/LightsailDefaultKey-us-east-1.pem bitnami@nmsnacks.com
+
+# Deploy to production
+cd /opt/bitnami/apache/htdocs && git pull origin main
+
+# Check production logs
+tail -f /opt/bitnami/apache/logs/error.log
+
+# Restart services
+sudo /opt/bitnami/ctlscript.sh restart apache
+```
+
+### Development Operations (dev.nmsnacks.com)
+```bash
+# SSH to development instance
+ssh -i ~/.ssh/LightsailDefaultKey-us-east-1.pem bitnami@dev.nmsnacks.com
+
+# Update development environment
+cd /path/to/nmsnacks && git pull origin dev
+
+# Install dependencies
+cd server && npm install && cd ../client && npm install
+
+# Start development servers
+npm run dev
+# OR with process manager
+pm2 start ecosystem.config.js
+
+# Stop development servers
+pm2 stop all
+# OR
+pkill -f "node.*3001" && pkill -f "node.*3000"
+```
+
+### AWS CLI Operations
+```bash
+# List all Lightsail instances
+aws lightsail get-instances
+
+# Get specific instance details
+aws lightsail get-instance --instance-name nmsnacks-prod
+aws lightsail get-instance --instance-name nmsnacks-dev
+
+# Instance operations (start/stop/reboot)
+aws lightsail start-instance --instance-name nmsnacks-dev
+aws lightsail stop-instance --instance-name nmsnacks-dev
+aws lightsail reboot-instance --instance-name nmsnacks-dev
+```
+
+### System Maintenance
+```bash
+# Production instance (Apache/MySQL)
+sudo /opt/bitnami/ctlscript.sh restart
+sudo /opt/bitnami/ctlscript.sh status
+
+# Development instance (Node.js/PostgreSQL)
+pm2 status
+docker ps  # if using Docker for databases
+```
