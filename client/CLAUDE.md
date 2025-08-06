@@ -2,15 +2,21 @@
 
 This file provides guidance to Claude Code when working with the React frontend of the NMSnacks point-of-sale system.
 
-## ⚠️ IMPORTANT: Architecture Focus
+## 🎯 **Client Application Context**
 
-**ONLY work with the modern React/Node.js stack**. This project has been fully migrated from legacy PHP/MySQL to a modern architecture:
+**NMSnacks Client** is the React-based frontend of the modern development stack (`dev` branch). This client application provides a modern, mobile-first interface for the point-of-sale system.
 
-- **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS  
-- **Backend**: Node.js + Express + Prisma + PostgreSQL
-- **No Legacy Code**: Do NOT search for, reference, or consider any PHP files, legacy database schemas, or outdated implementations
+### **Important Architecture Notes**
+- **Environment**: Development stack only (`dev` branch)
+- **Technology**: React 18 + TypeScript + Vite + Tailwind CSS
+- **API Backend**: Node.js/Express server (port 3001)
+- **Database**: Connects to PostgreSQL via backend API
+- **Deployment**: Development instance at dev.nmsnacks.com
 
-The old PHP codebase exists only for historical reference during data migration. All new development should use the modern stack exclusively.
+### **Relationship to Production**
+- **Production System**: Uses separate legacy PHP frontend (completely different)
+- **Development System**: This React client + Node.js backend
+- **No Cross-Compatibility**: Client only works with modern backend API
 
 ## Recent Development Work
 
@@ -372,5 +378,17 @@ npm run dev          # Start with hot reload for debugging
 - ✅ Sales trend charts implemented with Chart.js integration
 - ✅ Analytics page enhanced with interactive data visualization
 
-**Architecture**: Modern React/Node.js stack with PostgreSQL (no legacy PHP dependencies)
+**Architecture**: Modern React/Node.js stack with PostgreSQL (no legacy PHP dependencies)  
+**Environment**: Development stack only (`dev` branch, dev.nmsnacks.com)  
+**Backend Integration**: Node.js/Express API on port 3001  
 **Next Session**: Ready for additional analytics charts or new feature development
+
+---
+
+## 📚 **Documentation Links**
+
+- **[Main Documentation](../CLAUDE.md)** - Complete project documentation with Git workflows and AWS CLI
+- **[README.md](../README.md)** - Project overview and quick start guide  
+- **[MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md)** - Migration history from legacy PHP
+
+For comprehensive development guidance including Git workflows, AWS instance management, and deployment procedures, refer to the main [CLAUDE.md](../CLAUDE.md) file.

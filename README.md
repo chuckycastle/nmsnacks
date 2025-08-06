@@ -1,32 +1,58 @@
 # NMSnacks - Point of Sale System
 
-NMSnacks is a modern point-of-sale and inventory management system built with React and Node.js. This system manages product sales, inventory tracking, raffles, and business analytics for a snack business.
+**NMSnacks** is a dual-architecture point-of-sale and inventory management system for a snack business. The project maintains both a production-ready legacy PHP system and a modern React/Node.js development stack with separate AWS Lightsail instances.
 
-## Features
+## 🏗️ **Architecture Overview**
 
-- **Point of Sale (POS)** - Process sales transactions with modern UI
-- **Inventory Management** - Track products, stock levels, and restocking
-- **Customer Management** - Customer database with credit tracking
-- **Sales Analytics** - Interactive charts and reporting dashboard
-- **User Management** - Multi-user system with JWT authentication
-- **Raffle System** - Manage and track raffle sales (planned)
-- **Mobile-First Design** - Optimized for iPhone and tablet usage
+This repository uses a **dual-branch architecture** where branches serve completely different purposes:
 
-## System Architecture
+- **`main` branch**: Production PHP/MySQL application serving live traffic at [nmsnacks.com](https://nmsnacks.com)
+- **`dev` branch**: Modern React/TypeScript + Node.js/Express/PostgreSQL development stack
+- **`legacy` branch**: Historical archive of original codebase (read-only)
 
-### Frontend
-- **Framework**: React 18 with TypeScript
-- **Styling**: Tailwind CSS with dark mode support
-- **State Management**: React Query for server state, Zustand for client state
-- **Charts**: Chart.js with react-chartjs-2
-- **UI Components**: Headless UI for accessibility
-- **Build Tool**: Vite
+⚠️ **Important**: Branches are **never merged** - they serve independent environments with different technology stacks.
 
-### Backend
-- **Runtime**: Node.js with Express
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: JWT with secure session management
-- **Security**: Helmet, CORS, rate limiting, input validation
+## 🌟 **Features**
+
+### **Production System (PHP - nmsnacks.com)**
+- ✅ **Point of Sale (POS)** - Live transaction processing
+- ✅ **Inventory Management** - Product and stock tracking
+- ✅ **Customer Management** - Customer database with credit system
+- ✅ **User Management** - Multi-user access control
+- ✅ **Sales Reporting** - Business analytics and reporting
+- ✅ **Raffle System** - Ticket sales and management
+
+### **Development System (React/Node.js - dev.nmsnacks.com)**
+- ✅ **Modern UI Components** - React 18 with TypeScript
+- ✅ **Interactive Analytics** - Chart.js sales trend visualization
+- ✅ **Customer Management** - Modal-based editing with credit management
+- ✅ **JWT Authentication** - Secure token-based authentication
+- ✅ **Real-time Updates** - React Query for efficient data fetching
+- ✅ **Mobile-First Design** - Responsive Tailwind CSS interface
+
+## 🏛️ **Infrastructure**
+
+### **AWS Lightsail Instances**
+
+| **Environment** | **Instance Name** | **Domain** | **Technology Stack** |
+|----------------|-------------------|------------|----------------------|
+| **Production** | `N_M_Snacks` | [nmsnacks.com](https://nmsnacks.com) | PHP 8 + MySQL + Apache |
+| **Development** | `nmsnacks-dev` | [dev.nmsnacks.com](https://dev.nmsnacks.com) | React + Node.js + PostgreSQL |
+
+### **Technology Stacks**
+
+**Production Stack (main branch):**
+- **Backend**: PHP 8 with PDO MySQL
+- **Database**: MySQL/MariaDB
+- **Server**: Apache with Bitnami LAMP
+- **Frontend**: jQuery + Bootstrap + Chart.js
+
+**Development Stack (dev branch):**
+- **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS
+- **Backend**: Node.js + Express + Prisma ORM
+- **Database**: PostgreSQL 15 + Redis
+- **Authentication**: JWT with refresh tokens
+- **Security**: Helmet, CORS, rate limiting
 
 ## Directory Structure
 
@@ -57,158 +83,179 @@ NMSnacks is a modern point-of-sale and inventory management system built with Re
 └── package.json          # Root package.json
 ```
 
-## Installation
+## 🚀 **Quick Start**
 
-### Prerequisites
+### **Development Environment (Modern Stack)**
 
+**Prerequisites:**
 - Node.js 18+ with npm
-- PostgreSQL 14+
-- Git
+- Docker & Docker Compose
+- Git configured with GitHub access
 
-### Development Setup
-
-1. Clone this repository:
-   ```bash
-   git clone <repository-url>
-   cd nmsnacks
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Set up PostgreSQL database:
-   ```bash
-   # Using Docker (recommended)
-   docker-compose up -d postgres
-
-   # Or install PostgreSQL locally and create database
-   createdb nmsnacks
-   ```
-
-4. Configure environment variables:
-   ```bash
-   # Copy example files
-   cp .env.example .env
-   cp server/.env.example server/.env
-   cp client/.env.example client/.env
-
-   # Update database connection in server/.env
-   DATABASE_URL="postgresql://username:password@localhost:5432/nmsnacks"
-   ```
-
-5. Initialize database:
-   ```bash
-   cd server
-   npx prisma migrate dev
-   npx prisma db seed
-   ```
-
-6. Start development servers:
-   ```bash
-   # Backend (runs on :3001)
-   cd server && npm run dev
-
-   # Frontend (runs on :3000)
-   cd client && npm run dev
-   ```
-
-### Production Deployment
-
-1. Build the applications:
-   ```bash
-   npm run build
-   ```
-
-2. Set up environment variables for production
-3. Run database migrations:
-   ```bash
-   cd server && npx prisma migrate deploy
-   ```
-
-4. Start production servers:
-   ```bash
-   cd server && npm start
-   cd client && npm run preview
-   ```
-
-## API Documentation
-
-The backend provides a RESTful API with the following main endpoints:
-
-- **Authentication**: `/api/v1/auth/*`
-- **Products**: `/api/v1/products/*`
-- **Sales**: `/api/v1/sales/*`
-- **Customers**: `/api/v1/customers/*`
-- **Analytics**: `/api/v1/sales/analytics`
-
-API documentation is available at `/api/v1/docs` when running the development server.
-
-## Development
-
-### Frontend Development
-- Uses React 18 with TypeScript for type safety
-- Tailwind CSS for responsive styling with dark mode
-- React Query for efficient data fetching and caching
-- Chart.js for interactive data visualization
-
-### Backend Development
-- Express.js with TypeScript
-- Prisma ORM for type-safe database operations
-- JWT authentication with refresh tokens
-- Comprehensive input validation and error handling
-
-### Database Schema
-The application uses PostgreSQL with Prisma ORM. Key entities include:
-- Users (admin, seller roles)
-- Customers (with credit tracking)
-- Products (inventory management)
-- Sales (transaction records)
-- Analytics (aggregated reporting data)
-
-## Testing
-
+**Setup (5 minutes):**
 ```bash
-# Run frontend tests
-cd client && npm test
+# 1. Clone and switch to development branch
+git clone https://github.com/chuckycastle/nmsnacks.git
+cd nmsnacks
+git checkout dev
 
-# Run backend tests
-cd server && npm test
+# 2. Start database services
+docker-compose -f docker-compose.dev.yml up -d
 
-# Type checking
-npm run type-check
+# 3. Backend setup
+cd server
+npm install
+cp .env.example .env
+npx prisma migrate deploy
+npx tsx src/scripts/seed.ts
+npm run dev &
+
+# 4. Frontend setup
+cd ../client
+npm install
+npm run dev
 ```
 
-## Security Features
+**Access Points:**
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:3001
+- **Database**: PostgreSQL on localhost:5432
 
+**Test Credentials:**
+- **Admin**: `admin` / `Admin123!`
+- **Seller**: `seller1` / `Seller123!`
+
+### **Production Environment (Legacy PHP)**
+
+**Access:**
+- **Website**: https://nmsnacks.com
+- **Admin Panel**: https://nmsnacks.com/login.php
+
+**Management:**
+```bash
+# SSH to production server
+ssh -i ~/.ssh/LightsailDefaultKey-us-east-1.pem bitnami@nmsnacks.com
+
+# Update production code
+cd /opt/bitnami/apache/htdocs
+git pull origin main
+```
+
+## 📚 **Documentation**
+
+### **Comprehensive Documentation**
+- **[CLAUDE.md](./CLAUDE.md)** - Complete development guide with Git workflows, AWS CLI, and deployment procedures
+- **[MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)** - Migration history from legacy PHP to modern stack
+- **[client/CLAUDE.md](./client/CLAUDE.md)** - Frontend-specific development documentation
+
+### **API Documentation (Development Stack)**
+**Modern API Endpoints** (`dev` branch - Node.js/Express):
+- **Authentication**: `/api/v1/auth/*` (login, refresh, profile)
+- **Products**: `/api/v1/products/*` (CRUD operations)
+- **Sales**: `/api/v1/sales/*` (transaction processing)
+- **Customers**: `/api/v1/customers/*` (customer management)
+- **Analytics**: `/api/v1/sales/analytics` (sales trend data)
+- **Health Check**: `/health` (service status)
+
+**Legacy API Endpoints** (`main` branch - PHP):
+- **AJAX Endpoints**: `/ajax/*.php` (legacy PHP endpoints)
+- **Pages**: Direct PHP page routing
+
+## 🔧 **Development**
+
+### **Branch Management**
+```bash
+# Production work (PHP)
+git checkout main
+git pull origin main
+
+# Development work (React/Node.js)
+git checkout dev  
+git pull origin dev
+
+# NEVER merge branches - they serve different purposes
+```
+
+### **AWS Infrastructure Management**
+```bash
+# List NMSnacks instances
+aws lightsail get-instances --query 'instances[?tags[?key==`Project` && value==`NMSnacks`]]'
+
+# Instance operations
+aws lightsail start-instance --instance-name "N_M_Snacks"      # Production
+aws lightsail start-instance --instance-name nmsnacks-dev      # Development
+```
+
+### **Testing & Validation**
+```bash
+# Development stack testing
+cd server && npm run test && npm run lint
+cd client && npm run test && npm run type-check
+
+# Health checks
+curl http://localhost:3001/health                 # Backend API
+curl -I http://localhost:3000                     # Frontend
+curl -I https://nmsnacks.com                      # Production
+```
+
+## 🛡️ **Security & Best Practices**
+
+### **Development Security**
+- ✅ JWT tokens with refresh rotation
+- ✅ Input validation with Zod schemas
+- ✅ CORS configured for localhost only
+- ✅ Rate limiting on all endpoints
+- ✅ Environment-based configuration
+
+### **Production Security**
+- ✅ HTTPS enforced via domain
+- ✅ Key-based SSH authentication
+- ✅ SQL injection prevention (PDO prepared statements)
+- ✅ XSS protection with output escaping
+- ✅ Regular security updates
+
+## 🌿 **Git Workflow**
+
+### **Branch Strategy**
+- **`main`**: Production PHP application (never merge into)
+- **`dev`**: Modern React/Node.js development (never merge into)
+- **`legacy`**: Historical archive (read-only)
+
+### **Contribution Guidelines**
+1. **Development features**: Work on `dev` branch only
+2. **Production fixes**: Work on `main` branch only
+3. **Use conventional commits**: `feat:`, `fix:`, `docs:`, etc.
+4. **Test thoroughly**: Ensure changes work in target environment
+5. **Update documentation**: Keep docs current with changes
+
+## 📊 **Project Status**
+
+### **✅ Completed**
+- Dual-branch architecture with separate AWS instances
+- Modern React/TypeScript + Node.js/Express development stack
+- Customer management with credit system and modal interfaces  
+- Sales analytics with interactive Chart.js visualizations
 - JWT-based authentication with refresh tokens
-- Input validation and sanitization
-- SQL injection prevention via Prisma
-- XSS protection with proper output encoding
-- CORS configuration
-- Rate limiting
-- Secure session management
+- Comprehensive development environment with Docker
 
-## Contributing
+### **🔄 Current Focus**
+- Continuing modern stack feature development
+- Maintaining production system stability
+- Enhanced documentation and developer experience
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/new-feature`
-3. Make your changes with proper TypeScript types
-4. Test your changes thoroughly
-5. Submit a pull request
+### **🔮 Future Plans**
+- Complete feature parity between stacks
+- Migration strategy from legacy to modern system
+- Enhanced mobile responsiveness and offline capabilities
 
-## License
+## 📞 **Support & Contact**
 
-[Add appropriate license]
+- **Repository**: [GitHub - chuckycastle/nmsnacks](https://github.com/chuckycastle/nmsnacks)
+- **Issues**: Use GitHub Issues for bug reports and feature requests
+- **Documentation**: See [CLAUDE.md](./CLAUDE.md) for comprehensive development guide
 
-## Migration History
+---
 
-This application was completely rewritten from a legacy PHP/MySQL system to provide:
-- Modern development experience with TypeScript
-- Better mobile responsiveness
-- Real-time data updates
-- Enhanced security
-- Scalable architecture
-
-The legacy PHP codebase has been fully replaced and is no longer in use.
+**Last Updated**: August 6, 2025  
+**Architecture**: Dual-branch system with separate Lightsail instances  
+**Status**: Active development with stable production system
